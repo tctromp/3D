@@ -8,6 +8,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -33,20 +35,66 @@ public class GameMain {
 		private ArrayList<Vector3> nodes = new ArrayList<>();
 		private ArrayList<Edge> edges = new ArrayList<>();
 		private GameFrame gameFrame;
-		private double scale = 1;
+		private double scale = -5000;
 		
 		private int globalXOffset = 0;
 		private int globalYOffset = 0;
 		
+		private Vector3 center = new Vector3(0,0,0);
+		private Vector3 minCords = new Vector3(0,0,0);
+		private Vector3 maxCords = new Vector3(0,0,0);
+
+		
 		public GameHandler(){
 			
 					
-			//loadFile("C:/Users/Thomas/Documents/OBJ Files/stanfordBunny.txt");
-			loadFile("C:/Users/Thomas/Documents/OBJ Files/MoodyOBJ.obj");
+			//loadFile("C:/Users/Thomas/Documents/OBJ Files/stanfordBunny.obj");
+			loadFile("F:/OBJFiles/stanfordBunny.obj");
+			calcCenter();
+			/*
+			Vector3 node0 = new Vector3(20 + center.getX(), minCords.getY(), 20 + center.getZ());
+			Vector3 node1 = new Vector3(-20 + center.getX(), minCords.getY(), -20 + center.getZ());
+			Vector3 node2 = new Vector3(20 + center.getX(), minCords.getY(), -20 + center.getZ());
+			Vector3 node3 = new Vector3(-20 + center.getX(), minCords.getY(), 20 + center.getZ());
+
+			Vector3 node4 = new Vector3(20 + center.getX(), minCords.getY()-1, 20 + center.getZ());
+			Vector3 node5 = new Vector3(-20 + center.getX(), minCords.getY()-1, -20 + center.getZ());
+			Vector3 node6 = new Vector3(20 + center.getX(), minCords.getY()-1, -20 + center.getZ());
+			Vector3 node7 = new Vector3(-20 + center.getX(), minCords.getY()-1, 20 + center.getZ());
+			
+			nodes.add(node0);
+			nodes.add(node1);
+			nodes.add(node2);
+			nodes.add(node3);
+
+			nodes.add(node4);
+			nodes.add(node5);
+			nodes.add(node6);
+			nodes.add(node7);
+			
+			edges.add(new Edge(node0, node2));
+			edges.add(new Edge(node2, node1));
+			edges.add(new Edge(node3, node0));
+			edges.add(new Edge(node3, node1));
+			
+			edges.add(new Edge(node4, node6));
+			edges.add(new Edge(node6, node5));
+			edges.add(new Edge(node7, node4));
+			edges.add(new Edge(node7, node5));
+			
+			edges.add(new Edge(node0, node4));
+			edges.add(new Edge(node1, node5));
+			edges.add(new Edge(node2, node6));
+			edges.add(new Edge(node3, node7));
+			*/
 			gameFrame = new GameFrame(this);
 			
 			GameThread gt = new GameThread(this);
 			((Thread) gt).start();
+		}
+		
+		public Vector3 getCenter(){
+			return center;
 		}
 		
 		public int getGlobalXOffset(){
@@ -121,6 +169,39 @@ public class GameMain {
 			return edges;
 		}
 		
+		public void calcCenter(){
+			
+			double maxX = Double.MIN_VALUE;
+			double maxY = Double.MIN_VALUE;
+			double maxZ = Double.MIN_VALUE;
+
+			double minX = Double.MAX_VALUE;
+			double minY = Double.MAX_VALUE;
+			double minZ = Double.MAX_VALUE;
+			
+			
+			for(Vector3 node : nodes){
+				if(node.getX() > maxX) maxX = node.getX();
+				if(node.getY() > maxY) maxY = node.getY();
+				if(node.getZ() > maxZ) maxZ = node.getZ();
+				if(node.getX() < minX) minX = node.getX();
+				if(node.getY() < minY) minY = node.getY();
+				if(node.getZ() < minZ) minZ = node.getZ();				
+			}
+			maxCords = new Vector3(maxX, maxY, maxZ);
+			minCords = new Vector3(minX, minY, minZ);
+			center = new Vector3((maxX + minX)/2, (minY + maxY)/2, (maxZ + minZ)/2);
+			
+
+
+			for(Vector3 node : nodes){
+				node.setX(node.getX() - center.getX());
+				node.setY(node.getY() - center.getY());
+				node.setZ(node.getZ() - center.getZ());
+			}
+			
+		}
+		
 		public void loadFile(String file){
 			nodes.clear();
 			edges.clear();
@@ -182,7 +263,7 @@ public class GameMain {
 	public static class GamePanel extends JPanel{
 		
 		private GameHandler handler;
-		
+
 		public GamePanel(GameHandler handler){
 			this.handler = handler;
 		}
@@ -216,12 +297,21 @@ public class GameMain {
 				g2d.drawRect((int) (xOffset + (node.getX())*scale), (int) (yOffset + (node.getY())*scale), 0, 0);
 			}
 			
+			g2d.setColor(Color.BLUE);
+			
+			g2d.drawRect((int) (handler.getCenter().getX()-1), (int) (handler.getCenter().getY()-1), 10, 10);
+			
+			//System.out.println(handler.getCenter());
+			
 		}
 		
 		
 	}
 	
 	public static class GameFrame extends JFrame{
+		
+		private boolean shiftPressed = false;
+
 		
 		public GameFrame(GameHandler handler){
 			this.setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -230,6 +320,17 @@ public class GameMain {
 			this.setVisible(true);
 			
 			Vector3 prevLoc = new Vector3(0,0,0);
+			
+			this.addMouseWheelListener(new MouseWheelListener(){
+				@Override
+				public void mouseWheelMoved(MouseWheelEvent event) {
+					int i = event.getWheelRotation();
+					handler.setScale(handler.getScale() + i);
+				}
+				
+			});
+			
+			
 			this.addKeyListener(new KeyListener(){
 				
 				@Override
@@ -243,12 +344,16 @@ public class GameMain {
 					}if(event.getKeyChar() == 'd'){
 						handler.setGlobalXOffset(handler.getGlobalXOffset()-5);
 
+					}if(event.getKeyCode() == 16){ //SHIFT Pressed
+						shiftPressed = true;
 					}
 				}
 
 				@Override
-				public void keyReleased(KeyEvent arg0) {
-					
+				public void keyReleased(KeyEvent event) {
+					if(event.getKeyCode() == 16){ //SHIFT Pressed
+						shiftPressed = false;
+					}
 				}
 
 				@Override
@@ -301,10 +406,35 @@ public class GameMain {
 				public void mouseDragged(MouseEvent event) {
 					int x = event.getX();
 					int y = event.getY();
-					handler.rotateY(x - prevLoc.getX());
-					handler.rotateX(y - prevLoc.getY());
-					prevLoc.setX(x);
-					prevLoc.setY(y);
+					
+					if(event.getModifiersEx() == 2048){
+						handler.setGlobalXOffset((int) (handler.getGlobalXOffset() + (x - prevLoc.getX())));
+						handler.setGlobalYOffset((int) (handler.getGlobalYOffset() + (y - prevLoc.getY())));
+						prevLoc.setX(x);
+						prevLoc.setY(y);
+						return;
+					}
+					
+					if(shiftPressed){
+						if((x - prevLoc.getX()) > (y - prevLoc.getY())){
+							handler.rotateX((y - prevLoc.getY())/12);
+							prevLoc.setX(x);
+							prevLoc.setY(y);
+						}else{
+							handler.rotateY((x - prevLoc.getX())/12);
+							prevLoc.setX(x);
+							prevLoc.setY(y);
+						}
+						
+						
+					}else{
+						handler.rotateY((x - prevLoc.getX())/12);
+						handler.rotateX((y - prevLoc.getY())/12);
+						prevLoc.setX(x);
+						prevLoc.setY(y);
+					}
+					
+					
 				}
 
 				@Override
@@ -432,7 +562,10 @@ public class GameMain {
 			this.z = z;
 		}
 		
-		
+		@Override
+		public String toString(){
+			return "X: " + x + " Y: " + y + " Z: " + z;
+		}
 		
 		
 		
