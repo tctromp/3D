@@ -35,7 +35,7 @@ public class GameMain {
 		private ArrayList<Vector3> nodes = new ArrayList<>();
 		private ArrayList<Edge> edges = new ArrayList<>();
 		private GameFrame gameFrame;
-		private double scale = -5000;
+		private double scale = 1;
 		
 		private int globalXOffset = 0;
 		private int globalYOffset = 0;
@@ -54,14 +54,14 @@ public class GameMain {
 			/*
 			Vector3 node0 = new Vector3(20 + center.getX(), minCords.getY(), 20 + center.getZ());
 			Vector3 node1 = new Vector3(-20 + center.getX(), minCords.getY(), -20 + center.getZ());
-			Vector3 node2 = new Vector3(20 + center.getX(), minCords.getY(), -20 + center.getZ());
+			Vector3 node2 = new Vect), minCords.getY()-1, -20 + center.getZ());
+			Vector3 node6 = new Vector3(20 + center.getX(), minCords.getY()-1, -20 + center.getZ());
+			Vector3 node7 = new Vector3(-20 + center.getX(), minCords.getY()-1, 20 + center.getZ());
+			or3(20 + center.getX(), minCords.getY(), -20 + center.getZ());
 			Vector3 node3 = new Vector3(-20 + center.getX(), minCords.getY(), 20 + center.getZ());
 
 			Vector3 node4 = new Vector3(20 + center.getX(), minCords.getY()-1, 20 + center.getZ());
-			Vector3 node5 = new Vector3(-20 + center.getX(), minCords.getY()-1, -20 + center.getZ());
-			Vector3 node6 = new Vector3(20 + center.getX(), minCords.getY()-1, -20 + center.getZ());
-			Vector3 node7 = new Vector3(-20 + center.getX(), minCords.getY()-1, 20 + center.getZ());
-			
+			Vector3 node5 = new Vector3(-20 + center.getX(
 			nodes.add(node0);
 			nodes.add(node1);
 			nodes.add(node2);
@@ -336,11 +336,11 @@ public class GameMain {
 				@Override
 				public void keyPressed(KeyEvent event) {
 					if(event.getKeyChar() == 'w'){
-						handler.setScale(handler.getScale()+1);
+						handler.setScale(handler.getScale()+50);
 					}if(event.getKeyChar() == 'a'){
 						handler.setGlobalXOffset(handler.getGlobalXOffset()+5);
 					}if(event.getKeyChar() == 's'){
-						handler.setScale(handler.getScale()-1);
+						handler.setScale(handler.getScale()-50);
 					}if(event.getKeyChar() == 'd'){
 						handler.setGlobalXOffset(handler.getGlobalXOffset()-5);
 
@@ -416,7 +416,7 @@ public class GameMain {
 					}
 					
 					if(shiftPressed){
-						if((x - prevLoc.getX()) > (y - prevLoc.getY())){
+						if(Math.abs(x - prevLoc.getX()) > Math.abs(y - prevLoc.getY())){
 							handler.rotateX((y - prevLoc.getY())/12);
 							prevLoc.setX(x);
 							prevLoc.setY(y);
