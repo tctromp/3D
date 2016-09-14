@@ -36,7 +36,7 @@ public class GameMain {
 		private ArrayList<Edge> edges = new ArrayList<>();
 		private ArrayList<Face> faces = new ArrayList<>();
 		private GameFrame gameFrame;
-		private double scale = 1;
+		private double scale = 50;
 		
 		private int globalXOffset = 0;
 		private int globalYOffset = 0;
@@ -50,17 +50,17 @@ public class GameMain {
 			
 					
 			//loadFile("C:/Users/Thomas/Documents/OBJ Files/stanfordBunny.obj");
-			loadFile("F:/OBJFiles/box.obj");
+			loadFile("box.obj");
 			calcCenter();
 			
 			Vector3 node0 = new Vector3(center.getX(), minCords.getY(), 0 + center.getZ());
-			Vector3 node1 = new Vector3(center.getX(), minCords.getY(), -100 + center.getZ());
+			Vector3 node1 = new Vector3(center.getX(), minCords.getY(), 100 + center.getZ());
 
 			nodes.add(node0);
 			nodes.add(node1);
 			edges.add(new Edge(node0, node1));
 
-			
+			/*
 			Vector3 node2 = new Vector3(center.getX(), minCords.getY(),center.getZ());
 			Vector3 node3 = new Vector3(center.getX(), -100 + minCords.getY(),center.getZ());
 
@@ -75,45 +75,6 @@ public class GameMain {
 			nodes.add(node4);
 			nodes.add(node5);
 			edges.add(new Edge(node4, node5));
-			
-			
-			
-			
-			/*
-			Vector3 node0 = new Vector3(20 + center.getX(), minCords.getY(), 20 + center.getZ());
-			Vector3 node1 = new Vector3(-20 + center.getX(), minCords.getY(), -20 + center.getZ());
-			Vector3 node2 = new Vect), minCords.getY()-1, -20 + center.getZ());
-			Vector3 node6 = new Vector3(20 + center.getX(), minCords.getY()-1, -20 + center.getZ());
-			Vector3 node7 = new Vector3(-20 + center.getX(), minCords.getY()-1, 20 + center.getZ());
-			or3(20 + center.getX(), minCords.getY(), -20 + center.getZ());
-			Vector3 node3 = new Vector3(-20 + center.getX(), minCords.getY(), 20 + center.getZ());
-
-			Vector3 node4 = new Vector3(20 + center.getX(), minCords.getY()-1, 20 + center.getZ());
-			Vector3 node5 = new Vector3(-20 + center.getX(
-			nodes.add(node0);
-			nodes.add(node1);
-			nodes.add(node2);
-			nodes.add(node3);
-
-			nodes.add(node4);
-			nodes.add(node5);
-			nodes.add(node6);
-			nodes.add(node7);
-			
-			edges.add(new Edge(node0, node2));
-			edges.add(new Edge(node2, node1));
-			edges.add(new Edge(node3, node0));
-			edges.add(new Edge(node3, node1));
-			
-			edges.add(new Edge(node4, node6));
-			edges.add(new Edge(node6, node5));
-			edges.add(new Edge(node7, node4));
-			edges.add(new Edge(node7, node5));
-			
-			edges.add(new Edge(node0, node4));
-			edges.add(new Edge(node1, node5));
-			edges.add(new Edge(node2, node6));
-			edges.add(new Edge(node3, node7));
 			*/
 			gameFrame = new GameFrame(this);
 			
@@ -304,6 +265,7 @@ public class GameMain {
 		
 		public Face(ArrayList<Vector3> vs){
 			this.vs = vs;
+			this.color = new Color((int) (Math.random()*255), (int) (Math.random()*255), (int) (Math.random()*255));
 		}
 		
 		public ArrayList<Vector3> getNodes(){
@@ -327,6 +289,15 @@ public class GameMain {
 			
 		}
 		
+		public double getMaxZ(){
+			double d = vs.get(0).getZ();
+			for(Vector3 v : vs){
+				if(v.getZ() > d) d = v.getZ();
+			}
+			return d;
+			
+		}
+		
 	}
 	
 	
@@ -341,64 +312,287 @@ public class GameMain {
 		public ArrayList<Face> sortFaces(){
 			
 			ArrayList<Face> fs = (ArrayList<Face>) handler.getFaces().clone();
-			
-			for(int i = 0; i < fs.size(); i++){
-				Face f1 = fs.get(i);
-				Face f2 = fs.get(i);
-				for(int j = i; j < fs.size(); j++){
-					Face f3 = fs.get(j);
-					if(f3.getMinZ() > f2.getMinZ()){
-						f2 = f3;					
-					}
-				}
-				int l1 = fs.indexOf(f1);
-				int l2 = fs.indexOf(f2);
-
-				
-				fs.set(l1, f2);
-				fs.set(l2, f1);
-
+			Face[] ffs = new Face[fs.size()];
+			int a = 0;
+			for(Face f : fs){
+				ffs[a] = f;
+				a++;
 			}
 			
+			int c = 0;
+			int low;
+			double lowMax;
+			for(int i = 0; i < ffs.length; i++){
+				low = i;
+				lowMax = ffs[low].getMaxZ();
+				for(int j = i; j < ffs.length; j++){	
+					double mz = ffs[j].getMaxZ();
+					if(mz > lowMax){
+						low = j;				
+						lowMax = mz;
+					}
+					c++;
+				}
+				
+				Face f1 = ffs[i];
+				
+				ffs[i] = ffs[low];
+				ffs[low] = f1;
+				
+			}
+			fs.clear();
+			for(int i = 0; i < ffs.length; i++){
+				fs.add(ffs[i]);
+			}
+			
+			long init = System.currentTimeMillis();
+
+			
+			//System.out.println("Time Taken: " + (System.currentTimeMillis()-init) + " C: " + c);
+			//System.out.println(ffs.length);
 			//for(face)
 			
 			return fs;
 			
 		}
 		
+		Color[][] col;
+		
+		public void paintPolygon(int[] xs, int[] ys, int tot, Color color){
+			
+			if(col == null || col.length != colors.length || col[0].length != colors[0].length) col = new Color[colors.length][colors[0].length];
+			
+			for(int y = 0; y < col[0].length; y++){
+				for(int x = 0; x < col.length; x++){
+					col[x][y] = null;
+				}
+			}
+
+			
+			int xMax = max(xs);
+			int xMin = min(xs);
+			
+			if(xMax > colors.length) xMax = colors.length-1;
+			if(xMin < 0) xMin = 0;
+			
+			int yMax = max(ys);
+			int yMin = min(ys);
+			
+			if(yMax > colors[0].length) yMax = colors[0].length-1;
+			if(yMin < 0) yMin = 0;
+			
+			
+			for(int i = 0; i < xs.length; i++){
+				if(i+1 >= xs.length){
+					drawLine(col, color, xs[i], ys[i], xs[0], ys[0]);					
+					break;
+				}
+				drawLine(col, color, xs[i], ys[i], xs[i+1], ys[i+1]);
+			
+			}
+			
+
+			//System.out.println("XMAX: " + xMax + " XMIN: " + xMin);
+			//System.out.println("YMAX: " + yMax + " YMIN: " + yMin);
+			long startTime = System.currentTimeMillis();
+
+			for(int y = 0; y < col[0].length; y++){
+				boolean search = false;
+				int startPix = 0;
+				for(int x = 1; x < col.length; x++){
+					
+					//If pixel colored
+					if(col[x][y] != null && (col[x-1][y] == null)){
+						if(search == true){
+							search = false;
+							for(int i = startPix; i <= x; i++) setColor(col, color, i, y);
+							continue;
+						}
+						search = true;
+						startPix = x;	
+					}
+				}
+			}
+
+
+			for(int y = 0; y < col[0].length; y++){
+				for(int x = 0; x < col.length; x++){
+					if(col[x][y] != null) setColor(colors, color, x, y);
+				}
+			}
+			//System.out.println("Time: " + (System.currentTimeMillis()-startTime) + "ms");
+
+		}
+		/*
+		private void drawLine(Color[][] col, Color color, int x1, int y1, int x2, int y2){
+			int dx = Math.abs(x2 - x1);
+			int dy = Math.abs(y2 - y1);
+
+			int sx = (x1 < x2) ? 1 : -1;
+			int sy = (y1 < y2) ? 1 : -1;
+
+			int err = dx - dy;
+
+			while (true) {
+				setColor(col, color, x1, y1);
+
+			    if (x1 == x2 && y1 == y2) {
+			        break;
+			    }
+
+			    int e2 = 2 * err;
+
+			    if (e2 > -dy) {
+			        err = err - dy;
+			        x1 = x1 + sx;
+			    }
+
+			    if (e2 < dx) {
+			        err = err + dx;
+			        y1 = y1 + sy;
+			    }
+			}
+		}
+		*/
+		
+		private void drawLine(Color[][] col, Color color, int x1, int y1, int x2, int y2) {
+	        // delta of exact value and rounded value of the dependant variable
+	        int d = 0;
+	 
+	        int dy = Math.abs(y2 - y1);
+	        int dx = Math.abs(x2 - x1);
+	 
+	        int dy2 = (dy << 1); // slope scaling factors to avoid floating
+	        int dx2 = (dx << 1); // point
+	 
+	        int ix = x1 < x2 ? 1 : -1; // increment direction
+	        int iy = y1 < y2 ? 1 : -1;
+	 
+	        if (dy <= dx) {
+	            for (;;) {
+	            	setColor(col, color, x1, y1);
+	                if (x1 == x2)
+	                    break;
+	                x1 += ix;
+	                d += dy2;
+	                if (d > dx) {
+	                    y1 += iy;
+	                    d -= dx2;
+	                }
+	            }
+	        } else {
+	            for (;;) {
+	            	setColor(col, color, x1, y1);
+	                if (y1 == y2)
+	                    break;
+	                y1 += iy;
+	                d += dx2;
+	                if (d > dy) {
+	                    x1 += ix;
+	                    d -= dy2;
+	                }
+	            }
+	        }
+	    }
+		
+		private boolean setColor(Color[][] colors, Color color, int x, int y){
+			//System.out.println(colors.length);
+			if(x < 0 || y < 0 || x >= colors.length || y >= colors[0].length) return false;
+			if(colors[x][y] != null) return false; //!= null
+			colors[x][y] = color;
+			return true;
+		}
+		
+		private int max(int[] m){
+			int max = m[0];
+			for(int i = 1; i < m.length; i++){
+				if(m[i] > max) max = m[i];
+			}
+			return max;
+			
+		}
+		
+		private int min(int[] m){
+			int min = m[0];
+			for(int i = 1; i < m.length; i++){
+				if(m[i] < min) min = m[i];
+			}
+			return min;
+		}
+		
+		
+		
+		
+		Color[][] colors;
+
+		
 		@Override
 		public void paintComponent(Graphics g){
 			Graphics2D g2d = (Graphics2D) g;
-			
+
 			double scale = handler.getScale();
 			
 			double xOffset = this.getWidth()/2 + 200 + handler.getGlobalXOffset();
 			double yOffset = this.getHeight()/2 + 200 + handler.getGlobalYOffset();
 			
+			
 			g2d.setColor(Color.gray);
+			
+			if(colors == null || this.getWidth() != colors.length || this.getHeight() != colors[0].length) colors = new Color[this.getWidth()][this.getHeight()];
+			
+			for(int i = 0; i < colors.length; i++){
+				for(int j = 0; j < colors[0].length; j++){
+					colors[i][j] = null;
+				}
+			}
+
 			ArrayList<Face> fs = sortFaces();
+			//ArrayList<Face> fs = handler.getFaces();
+			
+
 			double a = 0;
 			double colorScale = 1.0*255/fs.size();
-			for(Face f : fs){
+			
+			for(int i = fs.size()-1; i >= 0; i--){
+			//for(int i = 0; i < fs.size(); i++){
+				Face f = fs.get(i);
 				a+=colorScale;
-				
+
 				if(f.getColor() == null)
 					f.setColor(new Color((int) a, (int) a, (int) a));
 					
 				g2d.setColor(f.getColor());
 				int[] xs = new int[f.getNodes().size()];
 				int[] ys = new int[f.getNodes().size()];
-				int i = 0;
+				
+				
+				
+				int b = 0;
 				for(Vector3 v : f.getNodes()){
-					xs[i] = (int) (xOffset + v.getX()*scale);
-					ys[i] = (int) (yOffset + v.getY()*scale);
-
-					i++;
+					xs[b] = (int) (xOffset + v.getX()*scale);
+					ys[b] = (int) (yOffset + v.getY()*scale);
+					b++;
 				}
 				
-				g2d.fillPolygon(xs, ys, f.getNodes().size());
-				
+				paintPolygon(xs, ys, f.getNodes().size(), f.getColor());
+				//g2d.fillPolygon(xs, ys, f.getNodes().size());
+
 			}
+			//g2d.setColor(Color.red);
+			//for(Edge e : handler.getEdges()){
+			//	g2d.drawLine((int) (xOffset + e.getV1().getX()*scale), (int) (yOffset+ e.getV1().getY()*scale), (int) (xOffset + e.getV2().getX()*scale), (int) (yOffset+ e.getV2().getY()*scale));
+			//}
+
+			g2d.setColor(Color.black);
+
+			for(int i = 0; i < colors.length; i++){
+				for(int j = 0; j < colors[0].length; j++){
+					if(colors[i][j] == null) continue;
+					g2d.setColor(colors[i][j]);
+					g2d.drawRect(i, j, 0, 0);
+				}
+			}
+			
 			
 			/*
 			g2d.setColor(Color.red);
