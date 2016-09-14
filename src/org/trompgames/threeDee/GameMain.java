@@ -34,6 +34,7 @@ public class GameMain {
 		
 		private ArrayList<Vector3> nodes = new ArrayList<>();
 		private ArrayList<Edge> edges = new ArrayList<>();
+		private ArrayList<Face> faces = new ArrayList<>();
 		private GameFrame gameFrame;
 		private double scale = 1;
 		
@@ -49,8 +50,35 @@ public class GameMain {
 			
 					
 			//loadFile("C:/Users/Thomas/Documents/OBJ Files/stanfordBunny.obj");
-			loadFile("F:/OBJFiles/stanfordBunny.obj");
+			loadFile("F:/OBJFiles/box.obj");
 			calcCenter();
+			
+			Vector3 node0 = new Vector3(center.getX(), minCords.getY(), 0 + center.getZ());
+			Vector3 node1 = new Vector3(center.getX(), minCords.getY(), -100 + center.getZ());
+
+			nodes.add(node0);
+			nodes.add(node1);
+			edges.add(new Edge(node0, node1));
+
+			
+			Vector3 node2 = new Vector3(center.getX(), minCords.getY(),center.getZ());
+			Vector3 node3 = new Vector3(center.getX(), -100 + minCords.getY(),center.getZ());
+
+			nodes.add(node2);
+			nodes.add(node3);
+			edges.add(new Edge(node2, node3));
+			
+		
+			Vector3 node4 = new Vector3(center.getX(), minCords.getY(), 0 + center.getZ());
+			Vector3 node5 = new Vector3(-100 + center.getX(), minCords.getY(), center.getZ());
+
+			nodes.add(node4);
+			nodes.add(node5);
+			edges.add(new Edge(node4, node5));
+			
+			
+			
+			
 			/*
 			Vector3 node0 = new Vector3(20 + center.getX(), minCords.getY(), 20 + center.getZ());
 			Vector3 node1 = new Vector3(-20 + center.getX(), minCords.getY(), -20 + center.getZ());
@@ -169,6 +197,10 @@ public class GameMain {
 			return edges;
 		}
 		
+		public ArrayList<Face> getFaces(){
+			return faces;
+		}
+		
 		public void calcCenter(){
 			
 			double maxX = Double.MIN_VALUE;
@@ -205,6 +237,7 @@ public class GameMain {
 		public void loadFile(String file){
 			nodes.clear();
 			edges.clear();
+			faces.clear();
 			try(Stream<String> stream = Files.lines(Paths.get(file))){
 				String line = "";
 				Iterator<String> it = stream.iterator();
@@ -235,13 +268,18 @@ public class GameMain {
 				vs[i] = Integer.parseInt(stv.nextToken()) - 1;
 			}
 			
+			ArrayList<Vector3> points = new ArrayList<>();
+			
 			for(int i = 0; i < vs.length; i++){
+				points.add(nodes.get(vs[i]));
+
 				if(i == vs.length-1){
 					edges.add(new Edge(nodes.get(i), nodes.get(0)));
 				}else{
 					edges.add(new Edge(nodes.get(vs[i]), nodes.get(vs[i+1])));
 				}				
-			}			
+			}
+			faces.add(new Face(points));
 		}
 		
 		public Vector3 getVector(String line){
@@ -259,6 +297,38 @@ public class GameMain {
 		
 	}
 	
+	public static class Face{
+		
+		private ArrayList<Vector3> vs;
+		private Color color;
+		
+		public Face(ArrayList<Vector3> vs){
+			this.vs = vs;
+		}
+		
+		public ArrayList<Vector3> getNodes(){
+			return vs;
+		}
+		
+		public Color getColor(){
+			return color;
+		}
+		
+		public void setColor(Color color){
+			this.color = color;
+		}
+		
+		public double getMinZ(){
+			double d = vs.get(0).getZ();
+			for(Vector3 v : vs){
+				if(v.getZ() < d) d = v.getZ();
+			}
+			return d;
+			
+		}
+		
+	}
+	
 	
 	public static class GamePanel extends JPanel{
 		
@@ -266,6 +336,34 @@ public class GameMain {
 
 		public GamePanel(GameHandler handler){
 			this.handler = handler;
+		}
+		
+		public ArrayList<Face> sortFaces(){
+			
+			ArrayList<Face> fs = (ArrayList<Face>) handler.getFaces().clone();
+			
+			for(int i = 0; i < fs.size(); i++){
+				Face f1 = fs.get(i);
+				Face f2 = fs.get(i);
+				for(int j = i; j < fs.size(); j++){
+					Face f3 = fs.get(j);
+					if(f3.getMinZ() > f2.getMinZ()){
+						f2 = f3;					
+					}
+				}
+				int l1 = fs.indexOf(f1);
+				int l2 = fs.indexOf(f2);
+
+				
+				fs.set(l1, f2);
+				fs.set(l2, f1);
+
+			}
+			
+			//for(face)
+			
+			return fs;
+			
 		}
 		
 		@Override
@@ -277,8 +375,32 @@ public class GameMain {
 			double xOffset = this.getWidth()/2 + 200 + handler.getGlobalXOffset();
 			double yOffset = this.getHeight()/2 + 200 + handler.getGlobalYOffset();
 			
+			g2d.setColor(Color.gray);
+			ArrayList<Face> fs = sortFaces();
+			double a = 0;
+			double colorScale = 1.0*255/fs.size();
+			for(Face f : fs){
+				a+=colorScale;
+				
+				if(f.getColor() == null)
+					f.setColor(new Color((int) a, (int) a, (int) a));
+					
+				g2d.setColor(f.getColor());
+				int[] xs = new int[f.getNodes().size()];
+				int[] ys = new int[f.getNodes().size()];
+				int i = 0;
+				for(Vector3 v : f.getNodes()){
+					xs[i] = (int) (xOffset + v.getX()*scale);
+					ys[i] = (int) (yOffset + v.getY()*scale);
+
+					i++;
+				}
+				
+				g2d.fillPolygon(xs, ys, f.getNodes().size());
+				
+			}
 			
-			
+			/*
 			g2d.setColor(Color.red);
 			
 			for(Edge edge : handler.getEdges()){
@@ -289,19 +411,19 @@ public class GameMain {
 				int y2 = (int) (yOffset + edge.getV2().getY()*scale);
 				
 				g2d.drawLine(x1, y1, x2, y2);
+				
+				
+				
 			}
+			
+			
 			
 			g2d.setColor(Color.black);
 			
 			for(Vector3 node : handler.getNodes()){
 				g2d.drawRect((int) (xOffset + (node.getX())*scale), (int) (yOffset + (node.getY())*scale), 0, 0);
 			}
-			
-			g2d.setColor(Color.BLUE);
-			
-			g2d.drawRect((int) (handler.getCenter().getX()-1), (int) (handler.getCenter().getY()-1), 10, 10);
-			
-			//System.out.println(handler.getCenter());
+			*/
 			
 		}
 		
